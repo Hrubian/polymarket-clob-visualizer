@@ -26,6 +26,9 @@ class CLOB {
         }
     }
 
+    fun getBids(): List<Pair<Double, Double>> = bids.toList()
+    fun getAsks(): List<Pair<Double, Double>> = asks.toList()
+
     fun bestBid(): Double = bids.maxOfOrNull { it.key } ?: 1.0
     fun bestAsk(): Double = asks.minOfOrNull { it.key } ?: 0.0 // TODO constants for the prices
 }

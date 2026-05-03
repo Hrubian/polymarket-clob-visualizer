@@ -90,7 +90,7 @@ function drawLine(ctx, data, key, color, now, min, max) {
 
 function drawGrid(ctx, width, height, now) {
   ctx.strokeStyle = "#787878";
-  ctx.lineWidth = 1e
+  ctx.lineWidth = 1
   ctx.shadowBlur = 4
   ctx.shadowColor = "#E0E0E0"
 

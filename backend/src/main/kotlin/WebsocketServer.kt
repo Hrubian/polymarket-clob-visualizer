@@ -19,9 +19,9 @@ import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 
 class WebsocketServer {
-    fun runIn(scope: CoroutineScope, prices: ReceiveChannel<L1>) = scope.launch(Dispatchers.IO) {
+    fun runIn(scope: CoroutineScope, l2Data: ReceiveChannel<OrderBookDTO>) = scope.launch(Dispatchers.IO) {
         val logger = LoggerFactory.getLogger("Server")
-        val sharedFlow = prices.consumeAsFlow().shareIn(
+        val sharedFlow = l2Data.consumeAsFlow().shareIn(
             scope = scope,
             started = SharingStarted.Lazily,
             replay = 5, // TODO? :)
@@ -31,12 +31,9 @@ class WebsocketServer {
                 contentConverter = KotlinxWebsocketSerializationConverter(Json)
             }
             routing {
-                webSocket("/prices") {
-                    logger.info("New session started")
-                    sharedFlow.collect {
-                        logger.debug("Sending new price to the client: {}", it)
-                        sendSerialized(it)
-                    }
+                webSocket("/l2") {
+                    logger.info("L2 session started")
+                    sharedFlow.collect { sendSerialized(it) }
                 }
             }
         }.start(wait = true)

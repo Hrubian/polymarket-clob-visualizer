@@ -1,11 +1,11 @@
+import {resizeCanvas} from "./rendering";
 
-export function registerEvents(window, canvas, websocket) {
+export function registerEvents(window, canvas, ctx, websocket) {
     // Websocket subscription
     websocket.addEventListener("message", (event) => {
+        console.log("Recieved msg from ws: " + event.data)
         const msg = JSON.parse(event.data);
-        console.log("Received bid " + msg.bidPrice + " and ask " + msg.askPrice)
-
-        addPoint(msg.bidPrice, msg.askPrice);
+        marketData.push(msg)
     });
 
     // History panning
@@ -21,13 +21,17 @@ export function registerEvents(window, canvas, websocket) {
 
     // Back to real-time
     window.addEventListener("dblclick", (e) => {
-
+        viewData.endTime = "now"
     });
 
     // time zooming
     canvas.addEventListener("wheel", (e) => {
         e.preventDefault();
-        console.log("TODO time zooming not done yet")
+        if (e.deltaY < 0) {
+            viewData.timeIntervalSeconds = Math.min(viewData.timeIntervalSeconds * 1.1, 1000);
+        } else {
+            viewData.timeIntervalSeconds = Math.max(viewData.timeIntervalSeconds / 1.1, 3);
+        }
     })
 
     // tooltips
@@ -43,7 +47,7 @@ export function registerEvents(window, canvas, websocket) {
     window.addEventListener("resize", (e) => {
         clearTimeout(resizeTimeout);
         resizeTimeout = setTimeout(() => {
-            resize();
+            resizeCanvas(canvas, ctx);
         }, 100);
     })
 }
