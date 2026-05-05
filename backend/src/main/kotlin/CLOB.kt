@@ -10,7 +10,7 @@ class CLOB {
     fun onInitBook(bids: Map<Double, Double>, asks: Map<Double, Double>) {
         this.bids.clear()
         this.asks.clear()
-        this.bids.putAll(bids)
+        this.bids.putAll(bids) // TODO check non-zero quantity
         this.asks.putAll(asks)
     }
 
@@ -26,9 +26,11 @@ class CLOB {
         }
     }
 
-    fun getBids(): List<Pair<Double, Double>> = bids.toList()
-    fun getAsks(): List<Pair<Double, Double>> = asks.toList()
+    fun getBids(): List<PriceQuantityPair> = bids.toList().map { it.toPriceQuantity() }.reversed() // TODO will be faster if we keep it reversed in the sorted map
+    fun getAsks(): List<PriceQuantityPair> = asks.toList().map { it.toPriceQuantity() }
 
     fun bestBid(): Double = bids.maxOfOrNull { it.key } ?: 1.0
     fun bestAsk(): Double = asks.minOfOrNull { it.key } ?: 0.0 // TODO constants for the prices
+
+    private fun Pair<Double, Double>.toPriceQuantity(): PriceQuantityPair = PriceQuantityPair(this.first, this.second)
 }

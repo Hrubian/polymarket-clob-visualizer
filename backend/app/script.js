@@ -54,7 +54,7 @@ function getY(price, min, max, height) {
 }
 
 function drawLine(ctx, data, key, color, now, min, max) {
-    if (data.length == 0) {
+    if (data.length === 0) {
         return;
     }
     ctx.beginPath();

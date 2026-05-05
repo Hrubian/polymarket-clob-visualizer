@@ -1,4 +1,5 @@
-import {resizeCanvas} from "./rendering";
+import {resizeCanvas} from "./rendering.js";
+import {viewData, marketData, interactionData} from "./data.js";
 
 export function registerEvents(window, canvas, ctx, websocket) {
     // Websocket subscription
@@ -10,13 +11,28 @@ export function registerEvents(window, canvas, ctx, websocket) {
 
     // History panning
     canvas.addEventListener("mousedown", (e) => {
-
+        interactionData.isDragging = true
+        interactionData.lastMouseX = e.clientX;
     });
     window.addEventListener("mouseup", (e) => {
-
+        interactionData.isDragging = false
     });
     window.addEventListener("mousemove", (e) => {
+        if (!interactionData.isDragging) return;
 
+        const dx = e.clientX - interactionData.lastMouseX;
+        interactionData.lastMouseX = e.clientX;
+
+        const msPerPixel = viewData.timeIntervalSeconds * 1000 / canvas.width;
+
+        const offsetChange = dx * msPerPixel
+
+        const now = Date.now();
+        if (viewData.endTime === "now") {
+            viewData.endTime = Math.min(now, now - offsetChange);
+        } else {
+            viewData.endTime = Math.min(now, viewData.endTime - offsetChange);
+        }
     });
 
     // Back to real-time

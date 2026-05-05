@@ -10,3 +10,9 @@ export const viewData = {
 }
 
 export const marketData = []
+
+
+export const interactionData = {
+    isDragging: false,
+    lastMouseX: null,
+}
