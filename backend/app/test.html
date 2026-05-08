@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #1e1e1e;
+        }
+
+        canvas {
+            display: block; /* removes inline spacing gap */
+        }
+    </style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<script src="https://unpkg.com/regl/dist/regl.min.js"></script>
+<h1>AHOJ</h1>
+<script>
+    const canvas = document.getElementById('gl');
+    const regl = createREGL({
+        canvas ,
+        extensions: ['OES_texture_float']
+    });
+
+    // size of your heatmap (time x price)
+    const W = 512;   // time columns
+    const H = 100;   // price levels
+
+    // CPU-side data buffer
+    const data = new Float32Array(W * H);
+
+    // fill with some fake data (replace with your L2)
+    function randomize() {
+        for (let i = 0; i < data.length; i++) {
+            data[i] = Math.random() * 10;
+        }
+    }
+
+    // create texture
+    const texture = regl.texture({
+        width: W,
+        height: H,
+        data: data,
+        format: 'luminance',
+        type: 'float'
+    });
+
+    // draw command
+    const draw = regl({
+        frag: `
+    precision mediump float;
+    uniform sampler2D tex;
+    varying vec2 uv;
+
+    void main () {
+      float v = texture2D(tex, uv).r;
+
+      // log scale
+      float intensity = log(v + 1.0) / 3.0;
+
+      // green → red gradient
+      vec3 color = mix(
+        vec3(0.0, 0.8, 0.2),
+        vec3(0.9, 0.2, 0.2),
+        uv.y
+      );
+
+      gl_FragColor = vec4(color, intensity);
+    }
+  `,
+        vert: `
+    precision mediump float;
+    attribute vec2 position;
+    varying vec2 uv;
+
+    void main () {
+      uv = 0.5 * (position + 1.0);
+      gl_Position = vec4(position, 0, 1);
+    }
+  `,
+        attributes: {
+            position: [
+                [-1, -1],
+                [ 1, -1],
+                [-1,  1],
+                [ 1,  1]
+            ]
+        },
+        uniforms: {
+            tex: texture
+        },
+        count: 4,
+        primitive: 'triangle strip'
+    });
+
+    // render loop
+    // regl.frame(() => {
+    //     randomize();                 // replace with your updates
+    //     texture.subimage(data);      // upload to GPU
+    //     draw();                      // draw full screen
+    // });
+    function frame() {
+        regl.poll();
+
+        regl.clear({
+            color: [0, 0, 0, 1]
+        });
+        randomize()
+
+        texture.subimage(data);
+        draw();
+
+        requestAnimationFrame(frame);
+    }
+
+    requestAnimationFrame(frame);
+
+    function resize() {
+        const dpr = window.devicePixelRatio || 1;
+
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+
+        canvas.style.width = width + "px";
+        canvas.style.height = height + "px";
+
+        regl._gl.viewport(0, 0, canvas.width, canvas.height);
+    }
+
+    window.addEventListener("resize", resize);
+    resize();
+</script>
+</body>
+</html>
