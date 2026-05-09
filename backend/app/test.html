@@ -28,16 +28,20 @@
     });
 
     // size of your heatmap (time x price)
-    const W = 512;   // time columns
+    const W = 1000;   // time columns
     const H = 100;   // price levels
 
     // CPU-side data buffer
     const data = new Float32Array(W * H);
 
+    function encode(value) {
+        return (value + 1000) / 2000
+    }
+
     // fill with some fake data (replace with your L2)
     function randomize() {
         for (let i = 0; i < data.length; i++) {
-            data[i] = Math.random() * 10;
+            data[i] = Math.random();////Math.random() * 10;
         }
     }
 
@@ -53,25 +57,39 @@
     // draw command
     const draw = regl({
         frag: `
-    precision mediump float;
-    uniform sampler2D tex;
-    varying vec2 uv;
+precision mediump float;
+uniform sampler2D tex;
+varying vec2 uv;
 
-    void main () {
-      float v = texture2D(tex, uv).r;
+void main () {
+  float v = texture2D(tex, uv).r;
 
-      // log scale
-      float intensity = log(v + 1.0) / 3.0;
+  // Convert from [0,1] → [-1,1]
+  v = v * 2.0 - 1.0;
 
-      // green → red gradient
-      vec3 color = mix(
-        vec3(0.0, 0.8, 0.2),
-        vec3(0.9, 0.2, 0.2),
-        uv.y
-      );
+  float intensity = 0.0;
+  vec3 color = vec3(0.0);
 
-      gl_FragColor = vec4(color, intensity);
-    }
+  if (v > 0.0) {
+    // ASK (red)
+    float scaled = v * 1000.0;
+    intensity = log(scaled + 1.0) / log(1001.0);
+
+    color = vec3(1.0, 0.2, 0.2);
+  } else if (v < 0.0) {
+    // BID (blue)
+    float scaled = -v * 1000.0;
+    intensity = log(scaled + 1.0) / log(1001.0);
+
+    color = vec3(0.2, 0.4, 1.0);
+  } else {
+    // zero → transparent
+    gl_FragColor = vec4(0.0);
+    return;
+  }
+
+  gl_FragColor = vec4(color, intensity);
+}
   `,
         vert: `
     precision mediump float;
@@ -104,7 +122,22 @@
     //     texture.subimage(data);      // upload to GPU
     //     draw();                      // draw full screen
     // });
+
+    let frames = 0;
+    let lastTime = performance.now()
+
     function frame() {
+        frames++;
+        let now = performance.now()
+
+        if (now - lastTime >= 1000) {
+            console.log(`FPS: ${frames}`);
+
+            frames = 0;
+            lastTime = now;
+        }
+
+
         regl.poll();
 
         regl.clear({
