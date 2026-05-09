@@ -11,13 +11,25 @@
           background: #1e1e1e; /* match canvas background */
         }
 
+        #container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
         canvas {
-          display: block; /* removes inline spacing gap */
+            position: absolute;
+            inset: 0;
+        }
+        #overlay {
+            pointer-events: none;
         }
     </style>
 </head>
 <body>
-    <canvas id="gl"></canvas>
+    <div id="container">
+        <canvas id="gl"></canvas>
+        <canvas id="overlay"></canvas>
+    </div>
     <script src="https://unpkg.com/regl/dist/regl.min.js"></script>
     <script type="module" src="init.js"></script>
 </body>

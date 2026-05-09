@@ -1,8 +1,8 @@
-import {resizeCanvas} from "./rendering.js";
 import {resize} from "./regl_rendering.js"
 import {viewData, marketData, interactionData} from "./data.js";
+import {resizeOverlay} from "./grid.js";
 
-export function registerEvents(window, canvas, websocket) {
+export function registerEvents(window, canvas, websocket, grid_canvas, grid_context) {
     // Websocket subscription
     websocket.addEventListener("message", (event) => {
         console.log("Recieved msg from ws: " + event.data)
@@ -65,6 +65,7 @@ export function registerEvents(window, canvas, websocket) {
         clearTimeout(resizeTimeout);
         resizeTimeout = setTimeout(() => {
             resize(canvas)
+            resizeOverlay(grid_context, grid_canvas)
         }, 100);
     })
 }
