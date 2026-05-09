@@ -4,7 +4,7 @@ export const viewData = {
     endTime: "now",
     timeIntervalSeconds: 30,
     minVisibleVolume: 0.0,
-    maxVolumeSaturation: 10000, // TODO more reasonable number
+    maxVolumeSaturation: 15000, // TODO more reasonable number
     priceStepSize: 0.1,
     // TODO sth for aggregation
 }

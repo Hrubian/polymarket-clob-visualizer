@@ -44,14 +44,16 @@ void main () {
 
   if (v > 0.0) {
     // ASK (red)
-    float scaled = v * 1000.0;
-    intensity = log(scaled + 1.0) / log(1001.0);
+    // float scaled = v * 1000.0;
+    // intensity = log(scaled + 1.0) / log(1001.0);
+    intensity = v;
 
     color = vec3(1.0, 0.2, 0.2);
   } else if (v < 0.0) {
     // BID (blue)
-    float scaled = -v * 1000.0;
-    intensity = log(scaled + 1.0) / log(1001.0);
+    // float scaled = -v * 1000.0;
+    // intensity = log(scaled + 1.0) / log(1001.0);
+    intensity = v;
 
     color = vec3(0.2, 0.4, 1.0);
   } else {
@@ -113,7 +115,11 @@ function fillData() {
     }
     let startTime = endTime - viewData.timeIntervalSeconds * 1000;
     let books = marketData.filter((book) => book.epochTimestamp >= startTime && book.epochTimestamp <= endTime) // TODO use binsearch
-    console.log("visible books: " + books.length)
+
+    let sumQuantity = 0.0
+    let cntQuantity = 0;
+    let maxQuantity = 0.0
+    let minQuantity = 10000000;
 
     for (let i = 0; i < books.length; i++) {
         const book = books[i];
@@ -129,8 +135,16 @@ function fillData() {
             const proportion = Math.min(quantity, viewData.maxVolumeSaturation) / viewData.maxVolumeSaturation; // [0, 1]
 
             const finalQuantity = ((- proportion) + 1) / 2.0;
+            console.log("bid finalQuantity: ", finalQuantity)
 
             data[row * W + column] = finalQuantity;
+
+            sumQuantity += quantity;
+            cntQuantity += 1;
+            if (quantity > maxQuantity)
+                maxQuantity = quantity;
+            if (quantity < minQuantity)
+                minQuantity = quantity;
         }
         for (let j = 0; j < book.asks.length; j++) {
             const priceLevel = book.asks[j];
@@ -142,11 +156,21 @@ function fillData() {
             const proportion = Math.min(quantity, viewData.maxVolumeSaturation) / viewData.maxVolumeSaturation; // [0, 1]
 
             const finalQuantity = proportion / 2 + 0.5;
+            console.log("ask finalQuantity: ", finalQuantity)
 
             data[row * W + column] = finalQuantity;
+
+            sumQuantity += quantity;
+            cntQuantity += 1;
+            if (quantity > maxQuantity)
+                maxQuantity = quantity;
+            if (quantity < minQuantity)
+                minQuantity = quantity;
         }
     }
-
+    console.log("avg: ", sumQuantity / cntQuantity);
+    console.log("max: ", maxQuantity);
+    console.log("min: ", minQuantity);
 }
 
 export function render_regl(canvas) {
