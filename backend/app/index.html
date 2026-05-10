@@ -9,6 +9,7 @@
           padding: 0;
           overflow: hidden; /* optional: removes scrollbars */
           background: #1e1e1e; /* match canvas background */
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
 
         #container {
@@ -23,6 +24,69 @@
         #overlay {
             pointer-events: none;
         }
+
+        #disconnect-dialog, #connecting-dialog {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(30, 30, 30, 0.95);
+            border: 1px solid #444;
+            color: #eee;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            min-width: 300px;
+        }
+
+        #connecting-dialog {
+            display: block; /* Show by default */
+        }
+
+        #disconnect-dialog h2 {
+            margin-top: 0;
+            color: #ff4d4d;
+        }
+
+        #connecting-dialog h2 {
+            margin-top: 0;
+            color: #4da6ff;
+        }
+
+        #disconnect-dialog button {
+            margin-top: 1.5rem;
+            background: #444;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.2s;
+        }
+
+        #disconnect-dialog button:hover {
+            background: #666;
+        }
+
+        .spinner {
+            margin: 1.5rem auto 0;
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid #4da6ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -31,6 +95,20 @@
         <canvas id="overlay"></canvas>
         <canvas id="trades"></canvas>
     </div>
+
+    <div id="connecting-dialog">
+        <h2>Connecting</h2>
+        <p>Establishing connection to the CLOB...</p>
+        <div class="spinner"></div>
+    </div>
+
+    <div id="disconnect-dialog">
+        <h2>Connection Lost</h2>
+        <p>The websocket has been disconnected.</p>
+        <p>Please refresh the page to try again.</p>
+        <button onclick="window.location.reload()">Refresh Page</button>
+    </div>
+
     <script src="https://unpkg.com/regl/dist/regl.min.js"></script>
     <script type="module" src="init.js"></script>
 </body>

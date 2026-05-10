@@ -9,6 +9,22 @@ export function registerEvents(window, canvas, websocket, grid_canvas, grid_cont
         marketData.push(msg)
     });
 
+    const showDisconnectDialog = () => {
+        const connectDialog = document.getElementById("connecting-dialog");
+        if (connectDialog) connectDialog.style.display = "none";
+        
+        const dialog = document.getElementById("disconnect-dialog");
+        if (dialog) dialog.style.display = "block";
+    };
+
+    websocket.addEventListener("open", () => {
+        const dialog = document.getElementById("connecting-dialog");
+        if (dialog) dialog.style.display = "none";
+    });
+
+    websocket.addEventListener("close", showDisconnectDialog);
+    websocket.addEventListener("error", showDisconnectDialog);
+
     // History panning
     canvas.addEventListener("mousedown", (e) => {
         interactionData.isDragging = true
