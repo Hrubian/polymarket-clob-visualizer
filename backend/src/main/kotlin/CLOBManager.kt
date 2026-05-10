@@ -35,7 +35,9 @@ class CLOBManager(val listenedId: String) {
                         asks = clob.getAsks(),
                     ))
                 }
-                is LastTradePriceEvent -> {}
+                is LastTradePriceEvent -> {
+                    println("TRADE: $event")
+                }
                 is PriceChangeEvent -> {
                     event.price_changes.forEach { priceChange ->
                         if (priceChange.asset_id == listenedId) {

@@ -11,7 +11,11 @@ export function drawGrid(ctx, overlay) {
         const y = getY(overlay, p);
 
         ctx.strokeStyle = 'rgba(0,255,255,0.18)';
-        ctx.lineWidth = 3
+        if (p == 0.5) {
+            ctx.lineWidth = 6
+        } else {
+            ctx.lineWidth = 3
+        }
 
         ctx.beginPath();
         ctx.moveTo(0, y);

@@ -11,6 +11,7 @@ export const viewData = {
 
 export const marketData = []
 
+export const trades = []
 
 export const interactionData = {
     isDragging: false,

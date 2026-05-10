@@ -30,7 +30,7 @@ class WebsocketClient {
     fun runIn(scope: CoroutineScope): ReceiveChannel<PolymarketEvent> = scope.produce(Dispatchers.IO) {
         val logger = LoggerFactory.getLogger("Client")
         HttpClient(CIO) {
-            install(Logging)
+//            install(Logging)
             install(WebSockets) {
                 contentConverter = KotlinxWebsocketSerializationConverter(Json)
             }
@@ -47,7 +47,7 @@ class WebsocketClient {
 
                 while (isActive) {
                     val incomingMsg = (incoming.receive() as Frame.Text).readText()
-                    logger.debug("Received msg from Polymarket: $incomingMsg")
+//                    logger.debug("Received msg from Polymarket: $incomingMsg")
 
                     val jsonArray = when (val jsonElement = Json.parseToJsonElement(incomingMsg)) {
                         is JsonArray -> jsonElement
