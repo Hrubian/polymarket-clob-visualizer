@@ -24,7 +24,7 @@ class WebsocketServer {
         val sharedFlow = l2Data.consumeAsFlow().shareIn(
             scope = scope,
             started = SharingStarted.Lazily,
-            replay = 5, // TODO? :)
+            replay = 300, // TODO? :)
         )
         embeddedServer(Netty, port = 8080) {
             install(WebSockets) {
