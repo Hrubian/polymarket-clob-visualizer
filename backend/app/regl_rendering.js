@@ -13,6 +13,10 @@ let texture = null;
 let frames = 0;
 let lastTime = performance.now()
 
+// for average fillData time
+let samples = 0;
+let sampleSum = 0;
+
 export function initRegl(canvas) {
     console.log("canvas: " + canvas)
     regl = window.createREGL({
@@ -92,13 +96,17 @@ function measureFPS() {
 
     if (now - lastTime >= 1000) {
         console.log(`FPS: ${frames}`);
+        console.log(`FillData AVG time: ${sampleSum / samples}`)
 
         frames = 0;
         lastTime = now;
+        sampleSum = 0;
+        samples = 0;
     }
 }
 
 function fillData() {
+    const perfStart = performance.now();
     data.fill(0.5);
     let endTime;
     if (viewData.endTime === "now") {
@@ -107,15 +115,33 @@ function fillData() {
         endTime = viewData.endTime;
     }
     let startTime = endTime - viewData.timeIntervalSeconds * 1000;
-    let books = marketData.filter((book) => book.epochTimestamp >= startTime && book.epochTimestamp <= endTime)
 
+    let prevBook = null
+    let books = []
+    for (let index = 0; index < marketData.length; ++index) {
+        const book = marketData[index];
+        if (book.epochTimestamp >= startTime && book.epochTimestamp <= endTime) {
+            if (books.length === 0 && prevBook) {
+                books.push(prevBook) // This is the initial book before the range (if non-null
+            }
+            books.push(book);
+        }
+        prevBook = book;
+    }
+
+    //old
     for (let i = 0; i < books.length; i++) {
         const book = books[i];
         const timestamp = book.epochTimestamp;
+        const nextTimestamp = i < (books.length - 1) ? books[i + 1].epochTimestamp : endTime;
         let column = Math.floor((timestamp - startTime) / (viewData.timeIntervalSeconds * 1000) * W);
         column = Math.max(0, Math.min(W - 1, column));
 
+        let nextColumn = Math.floor((nextTimestamp - startTime) / (viewData.timeIntervalSeconds * 1000) * W);
+        nextColumn = Math.max(0, Math.min(W - 1, nextColumn));
+
         for (let j = 0; j < book.bids.length; j++) {
+            let currentColumn = column;
             const priceLevel = book.bids[j];
             const price = priceLevel.price;
             const quantity = priceLevel.quantity;
@@ -126,9 +152,13 @@ function fillData() {
             const proportion = Math.min(quantity, viewData.maxVolumeSaturation) / viewData.maxVolumeSaturation;
             const finalQuantity = ((- proportion) + 1) / 2.0;
 
-            data[row * W + column] = finalQuantity;
+            while (currentColumn < nextColumn) {
+                data[row * W + currentColumn] = finalQuantity;
+                currentColumn++;
+            }
         }
         for (let j = 0; j < book.asks.length; j++) {
+            let currentColumn = column;
             const priceLevel = book.asks[j];
             const price = priceLevel.price;
             const quantity = priceLevel.quantity;
@@ -139,9 +169,15 @@ function fillData() {
             const proportion = Math.min(quantity, viewData.maxVolumeSaturation) / viewData.maxVolumeSaturation;
             const finalQuantity = proportion / 2 + 0.5;
 
-            data[row * W + column] = finalQuantity;
+            while (currentColumn < nextColumn) {
+                data[row * W + currentColumn] = finalQuantity;
+                currentColumn++;
+            }
         }
     }
+    const perfEnd = performance.now();
+    samples++;
+    sampleSum += perfEnd - perfStart;
 }
 
 export function render_regl(canvas) {
