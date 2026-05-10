@@ -1,7 +1,7 @@
 // TODO can it be modifiable
 import {marketData, viewData} from "./data.js";
 // import createREGL from 'https://cdn.skypack.dev/regl';
-const W = 1000;   // time columns
+const W = 1200;   // time columns
 const H = 100;   // price levels
 
 // CPU-side data buffer
@@ -47,12 +47,12 @@ void main () {
 
   if (v > 0.0) {
     // ASK (red)
-    intensity = v;
-    color = vec3(1.0, 0.2, 0.2);
+    intensity = 0.15 + 0.85 * v;
+    color = vec3(1.0, 0.0, 0.0);
   } else if (v < 0.0) {
     // BID (blue)
-    intensity = -v; // Ensure positive intensity
-    color = vec3(0.2, 0.4, 1.0);
+    intensity = 0.15 + 0.85 * (-v);
+    color = vec3(0.0, 0.3, 1.0);
   } else {
     // zero → transparent
     gl_FragColor = vec4(0.0);
@@ -107,74 +107,75 @@ function measureFPS() {
 
 function fillData() {
     const perfStart = performance.now();
+
+    const vData = viewData;
+    const endTime = vData.endTime === "now" ? Date.now() : vData.endTime;
+    const timeIntervalMs = vData.timeIntervalSeconds * 1000;
+    const startTime = endTime - timeIntervalMs;
+    const maxVol = vData.maxVolumeSaturation;
+    const invMaxVol = 1.0 / maxVol;
+    const timeToColFactor = W / timeIntervalMs;
+
     data.fill(0.5);
-    let endTime;
-    if (viewData.endTime === "now") {
-        endTime = Date.now()
-    } else {
-        endTime = viewData.endTime;
-    }
-    let startTime = endTime - viewData.timeIntervalSeconds * 1000;
 
-    let prevBook = null
-    let books = []
-    for (let index = 0; index < marketData.length; ++index) {
-        const book = marketData[index];
-        if (book.epochTimestamp >= startTime && book.epochTimestamp <= endTime) {
-            if (books.length === 0 && prevBook) {
-                books.push(prevBook) // This is the initial book before the range (if non-null
-            }
-            books.push(book);
-        }
-        prevBook = book;
+    const n = marketData.length;
+    if (n === 0) return;
+
+    // Binary search for the first book that starts at or after startTime
+    let low = 0;
+    let high = n;
+    while (low < high) {
+        let mid = (low + high) >>> 1;
+        if (marketData[mid].epochTimestamp < startTime) low = mid + 1;
+        else high = mid;
     }
 
-    //old
-    for (let i = 0; i < books.length; i++) {
-        const book = books[i];
+    // The book active at startTime is marketData[low - 1] if it exists
+    let startIdx = low > 0 ? low - 1 : 0;
+
+    for (let i = startIdx; i < n; i++) {
+        const book = marketData[i];
         const timestamp = book.epochTimestamp;
-        const nextTimestamp = i < (books.length - 1) ? books[i + 1].epochTimestamp : endTime;
-        let column = Math.floor((timestamp - startTime) / (viewData.timeIntervalSeconds * 1000) * W);
-        column = Math.max(0, Math.min(W - 1, column));
 
-        let nextColumn = Math.floor((nextTimestamp - startTime) / (viewData.timeIntervalSeconds * 1000) * W);
-        nextColumn = Math.max(0, Math.min(W - 1, nextColumn));
+        if (timestamp > endTime) break;
 
-        for (let j = 0; j < book.bids.length; j++) {
-            let currentColumn = column;
-            const priceLevel = book.bids[j];
-            const price = priceLevel.price;
-            const quantity = priceLevel.quantity;
+        const nextTimestamp = (i + 1 < n) ? marketData[i + 1].epochTimestamp : endTime;
 
-            let row = Math.floor(price * H); // TODO log exp?
-            row = Math.max(0, Math.min(H - 1, row));
+        let col = ((timestamp - startTime) * timeToColFactor) | 0;
+        let nextCol = ((nextTimestamp - startTime) * timeToColFactor) | 0;
 
-            const proportion = Math.min(quantity, viewData.maxVolumeSaturation) / viewData.maxVolumeSaturation;
-            const finalQuantity = ((- proportion) + 1) / 2.0;
+        if (col < 0) col = 0;
+        if (nextCol > W) nextCol = W;
 
-            while (currentColumn < nextColumn) {
-                data[row * W + currentColumn] = finalQuantity;
-                currentColumn++;
-            }
+        if (col >= nextCol || col >= W) continue;
+
+        const bids = book.bids;
+        for (let j = 0; j < bids.length; j++) {
+            const b = bids[j];
+            let row = (b.price * H) | 0;
+            if (row < 0) row = 0; else if (row >= H) row = H - 1;
+
+            const p = (b.quantity < maxVol ? b.quantity : maxVol) * invMaxVol;
+            const val = 0.5 - p * 0.5;
+
+            const rowOffset = row * W;
+            data.fill(val, rowOffset + col, rowOffset + nextCol);
         }
-        for (let j = 0; j < book.asks.length; j++) {
-            let currentColumn = column;
-            const priceLevel = book.asks[j];
-            const price = priceLevel.price;
-            const quantity = priceLevel.quantity;
 
-            let row = Math.floor(price * H);
-            row = Math.max(0, Math.min(H - 1, row));
+        const asks = book.asks;
+        for (let j = 0; j < asks.length; j++) {
+            const a = asks[j];
+            let row = (a.price * H) | 0;
+            if (row < 0) row = 0; else if (row >= H) row = H - 1;
 
-            const proportion = Math.min(quantity, viewData.maxVolumeSaturation) / viewData.maxVolumeSaturation;
-            const finalQuantity = proportion / 2 + 0.5;
+            const p = (a.quantity < maxVol ? a.quantity : maxVol) * invMaxVol;
+            const val = 0.5 + p * 0.5;
 
-            while (currentColumn < nextColumn) {
-                data[row * W + currentColumn] = finalQuantity;
-                currentColumn++;
-            }
+            const rowOffset = row * W;
+            data.fill(val, rowOffset + col, rowOffset + nextCol);
         }
     }
+
     const perfEnd = performance.now();
     samples++;
     sampleSum += perfEnd - perfStart;

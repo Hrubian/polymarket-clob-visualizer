@@ -5,7 +5,6 @@ import {resizeOverlay} from "./grid.js";
 export function registerEvents(window, canvas, websocket, grid_canvas, grid_context) {
     // Websocket subscription
     websocket.addEventListener("message", (event) => {
-        console.log("Recieved msg from ws: " + event.data)
         const msg = JSON.parse(event.data);
         marketData.push(msg)
     });
