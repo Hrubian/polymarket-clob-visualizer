@@ -81,7 +81,7 @@ export function registerEvents(window, canvas, websocket, grid_canvas, grid_cont
         clearTimeout(resizeTimeout);
         resizeTimeout = setTimeout(() => {
             resize(canvas)
-            resizeOverlay(grid_context, grid_canvas)
+            resizeOverlay(grid_context, grid_canvas, viewData)
         }, 100);
     })
 }

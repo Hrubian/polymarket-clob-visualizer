@@ -181,15 +181,13 @@ function fillData() {
     sampleSum += perfEnd - perfStart;
 }
 
-export function render_regl(canvas) {
+export function renderHeatmap(canvas) {
     measureFPS();
     regl.poll();
     regl.clear({color: [0, 0, 0, 1]});
     fillData()
     texture.subimage(data);
     draw();
-
-    requestAnimationFrame(() => render_regl(canvas));
 }
 
 export function resize(canvas) {
