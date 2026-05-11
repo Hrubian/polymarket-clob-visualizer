@@ -152,7 +152,7 @@ function fillData() {
         const bids = book.bids;
         for (let j = 0; j < bids.length; j++) {
             const b = bids[j];
-            let row = (b.price * H) | 0;
+            let row = (b.price * H + 0.0001) | 0;
             if (row < 0) row = 0; else if (row >= H) row = H - 1;
 
             const p = (b.quantity < maxVol ? b.quantity : maxVol) * invMaxVol;
@@ -165,7 +165,7 @@ function fillData() {
         const asks = book.asks;
         for (let j = 0; j < asks.length; j++) {
             const a = asks[j];
-            let row = (a.price * H) | 0;
+            let row = (a.price * H + 0.0001) | 0;
             if (row < 0) row = 0; else if (row >= H) row = H - 1;
 
             const p = (a.quantity < maxVol ? a.quantity : maxVol) * invMaxVol;
