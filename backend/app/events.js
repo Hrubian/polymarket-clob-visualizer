@@ -84,6 +84,19 @@ export function registerEvents(window, canvas, websocket, grid_canvas, grid_cont
             resizeOverlay(grid_context, grid_canvas, viewData)
         }, 100);
     })
+
+    // Volume saturation control
+    window.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowUp") {
+            viewData.maxVolumeSaturation *= 1.1;
+            viewData.maxVolumeSaturation = Math.min(1000000, viewData.maxVolumeSaturation);
+            console.log("maxVolumeSaturation:", viewData.maxVolumeSaturation.toFixed(0));
+        } else if (e.key === "ArrowDown") {
+            viewData.maxVolumeSaturation /= 1.1;
+            viewData.maxVolumeSaturation = Math.max(1, viewData.maxVolumeSaturation);
+            console.log("maxVolumeSaturation:", viewData.maxVolumeSaturation.toFixed(0));
+        }
+    });
 }
 
 function zoomTime(e) {
